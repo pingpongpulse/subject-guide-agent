@@ -2,10 +2,11 @@ import os
 from dotenv import load_dotenv
 from agents.query_classifier import classify_query
 from agents.topic_explainer import explain_topic
+from vectorstore.retriever import retrieve_docs
 
 load_dotenv()
 
-def route_query(query, docs):
+def route_query(query, doc_type=None, subject=None):
     """
     Routes query to the correct agent based on classification.
     """
@@ -14,12 +15,14 @@ def route_query(query, docs):
     # Step 1: Classify
     category = classify_query(query)
     print(f"Query classified as: {category}")
+    docs = retrieve_docs(query, k=4)
+    print(f"Retriever returned {len(docs)} chunks")
 
     # Step 2: Route to correct agent
     if category == "topic_explanation":
         agent_name = "TopicExplainerAgent"
         print(f"Selected agent: {agent_name}")
-        print(f"Retriever returned {len(docs)} chunks")
+        print(f"Retrieved chunks: {len(docs)}")
         answer = explain_topic(query, docs)
 
     elif category == "question_solving":

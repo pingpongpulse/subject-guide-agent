@@ -1,9 +1,12 @@
+
 import os
 from groq import Groq
 from dotenv import load_dotenv
+from utils.context_formatter import format_context
 
 load_dotenv()
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
 
 def format_context(docs):
     """
@@ -11,10 +14,18 @@ def format_context(docs):
     """
     context = ""
     for i, doc in enumerate(docs):
-        source = doc.get("source_file", "unknown")
-        page = doc.get("page_number", "?")
-        doc_type = doc.get("doc_type", "notes")
-        text = doc.get("text", "")[:500]
+        if hasattr(doc, 'metadata'):
+            # langchain Document
+            source = doc.metadata.get("source_file", "unknown")
+            page = doc.metadata.get("page_number", "?")
+            doc_type = doc.metadata.get("doc_type", "notes")
+            text = doc.page_content[:500]
+        else:
+            # dict
+            source = doc.get("source_file", "unknown")
+            page = doc.get("page_number", "?")
+            doc_type = doc.get("doc_type", "notes")
+            text = doc.get("text", "")[:500]
         context += f"\n[Source {i+1}: {source} | Page {page} | Type: {doc_type}]\n{text}\n"
     return context
 
@@ -35,12 +46,6 @@ Using the context below from the student's uploaded study materials, answer the 
 
 **Explanation:**
 (detailed explanation in simple terms)
-
-**Example:**
-(a concrete example)
-
-**Related PYQs:**
-(any related exam questions found in the context, or say "Not found in uploaded materials")
 
 **Sources:**
 (list the source files and page numbers used)
