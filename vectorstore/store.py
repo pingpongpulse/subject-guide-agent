@@ -44,8 +44,16 @@ def add_documents(documents: list[Document]) -> None:
 
     print(f"✅ Total {len(documents)} chunks successfully stored in ChromaDB")
 
-def clear_vector_store() -> None:
-    """Deletes the existing database. Use this if you change your embedding model."""
+def clear_vector_store():
+    # 1. If you have a global vector_store object, try to set it to None 
+    # to release the file lock
+    global _vector_store
+    _vector_store = None 
+    
     if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH)
-        print("🗑️ Vector store cleared.")
+        try:
+            shutil.rmtree(CHROMA_PATH)
+            print("🗑️ Vector store cleared.")
+        except PermissionError:
+            print("⚠️ Could not delete ChromaDB folder because it is in use.")
+            print("👉 Try restarting your terminal or VS Code.")
