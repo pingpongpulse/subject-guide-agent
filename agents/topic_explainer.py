@@ -1,17 +1,24 @@
 
 import os
-from groq import Groq
 from dotenv import load_dotenv
 from utils.context_formatter import format_context
 
 load_dotenv()
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
+def _get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return None
+
+    # Import inside function so the module can still be imported when the key is not set.
+    from groq import Groq
+
+    return Groq(api_key=api_key)
 
 
 def format_context(docs):
-    """
-    Formats retrieved docs into a readable context string.
-    """
+    """Formats retrieved docs into a readable context string."""
     context = ""
     for i, doc in enumerate(docs):
         if hasattr(doc, 'metadata'):
@@ -31,10 +38,20 @@ def format_context(docs):
 
 
 def explain_topic(query, docs):
-    """
-    Takes a query and retrieved docs, returns structured explanation.
-    """
+    """Takes a query and retrieved docs, returns structured explanation."""
     context = format_context(docs)
+
+    groq_client = _get_groq_client()
+    if not groq_client:
+        # Fallback when GROQ_API_KEY is not provided.
+        if docs:
+            preview = docs[0].page_content.strip().replace("\n", " ")
+            preview = preview[:500] + ("..." if len(preview) > 500 else "")
+            return (
+                "⚠️ GROQ_API_KEY not set. Returning a simple fallback answer based on the retrieved documents.\n\n"
+                f"Top document excerpt: {preview}"
+            )
+        return "⚠️ GROQ_API_KEY not set and no documents are available to answer the query."
 
     prompt = f"""
 You are an expert academic tutor helping a student understand a topic.

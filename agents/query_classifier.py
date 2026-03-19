@@ -1,14 +1,28 @@
 import os
-from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
+def _get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return None
+
+    # Import inside function so the module can still be imported when the key is not set.
+    from groq import Groq
+
+    return Groq(api_key=api_key)
+
 
 def classify_query(query):
-    """
-    Classifies user query into one of 4 categories.
-    """
+    """Classifies user query into one of 4 categories."""
+
+    # If no Groq key is configured, fall back to a default category so the UI can still work.
+    groq_client = _get_groq_client()
+    if not groq_client:
+        return "topic_explanation"
+
     prompt = f"""
 You are a query classifier for a student study assistant.
 
