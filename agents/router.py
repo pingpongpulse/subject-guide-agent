@@ -2,33 +2,36 @@ import os
 from dotenv import load_dotenv
 from agents.query_classifier import classify_query
 from agents.topic_explainer import explain_topic
+from agents.question_solver import solve_question
 from vectorstore.retriever import retrieve_docs
 
 load_dotenv()
 
-def route_query(query, doc_type=None, subject=None):
+
+def route_query(query, doc_type=None, subject=None, difficulty="intermediate"):
     """
-    Routes query to the correct agent based on classification.
+    Routes query to correct agent based on classification.
     """
     print(f"\nQuery received: {query}")
 
-    # Step 1: Classify
+    # Step 1: Classify query
     category = classify_query(query)
     print(f"Query classified as: {category}")
+
+    # Step 2: Retrieve relevant docs
     docs = retrieve_docs(query, k=4)
     print(f"Retriever returned {len(docs)} chunks")
 
-    # Step 2: Route to correct agent
+    # Step 3: Route to correct agent
     if category == "topic_explanation":
         agent_name = "TopicExplainerAgent"
         print(f"Selected agent: {agent_name}")
-        print(f"Retrieved chunks: {len(docs)}")
-        answer = explain_topic(query, docs)
+        answer = explain_topic(query, docs, difficulty=difficulty)
 
     elif category == "question_solving":
         agent_name = "QuestionSolverAgent"
         print(f"Selected agent: {agent_name}")
-        answer = "[QuestionSolverAgent coming in Week 3]"
+        answer = solve_question(query, docs, difficulty=difficulty)
 
     elif category == "revision":
         agent_name = "RevisionAgent"
@@ -42,7 +45,8 @@ def route_query(query, doc_type=None, subject=None):
 
     else:
         agent_name = "TopicExplainerAgent"
-        answer = explain_topic(query, docs)
+        print(f"Selected agent: {agent_name}")
+        answer = explain_topic(query, docs, difficulty=difficulty)
 
     return {
         "agent": agent_name,
@@ -52,17 +56,9 @@ def route_query(query, doc_type=None, subject=None):
 
 
 if __name__ == "__main__":
-    # Test with dummy docs
-    dummy_docs = [
-        {
-            "text": "Demand paging loads pages into memory only when they are needed during execution.",
-            "source_file": "os_notes.pdf",
-            "page_number": 10,
-            "doc_type": "notes"
-        }
-    ]
-
-    result = route_query("Explain demand paging", dummy_docs)
-    print("\n--- FINAL OUTPUT ---")
-    print(f"Agent: {result['agent']}")
-    print(f"Answer:\n{result['answer']}")
+    result = route_query(
+        "Explain the Banker's algorithm for deadlock avoidance",
+        difficulty="intermediate"
+    )
+    print(f"\nAgent: {result['agent']}")
+    print(f"\n{result['answer']}")
