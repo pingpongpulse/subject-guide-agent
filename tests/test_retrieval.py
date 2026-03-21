@@ -13,6 +13,8 @@ QUERIES = [
     {"query": "Explain demand paging", "doc_type": None, "subject": None},
     {"query": "What is virtual file system", "doc_type": None, "subject": None},
     {"query": "Advantages of demand paging", "doc_type": None, "subject": None},
+    {"query": "Explain demand paging", "doc_type": None, "subject": "os"},
+    {"query": "What is virtual file system", "doc_type": None, "subject": "os"},
 ]
 
 
@@ -43,7 +45,17 @@ def setup_test_data():
     for file_name in files:
         file_path = os.path.join(sample_folder, file_name)
         try:
-            chunks = chunk_document(file_path, subject="general")
+            # Assign subject based on filename
+            if "operating" in file_name.lower():
+                subject = "os"
+            elif "database" in file_name.lower() or "dbms" in file_name.lower():
+                subject = "dbms"
+            elif "network" in file_name.lower() or "cn" in file_name.lower():
+                subject = "cn"
+            else:
+                subject = "general"
+            
+            chunks = chunk_document(file_path, subject=subject)
             all_chunks.extend(chunks)
         except Exception as e:
             print(f"⚠️  Skipped {file_name}: {e}")
@@ -95,6 +107,14 @@ def test_metadata_filtering():
     for doc in docs:
         print(f"   - {doc.metadata.get('source_file')} | "
               f"{doc.metadata.get('subject')} | "
+              f"score: {doc.metadata.get('relevance_score')}")
+
+    print("\n🔍 Filter: doc_type in ['notes','pyq','textbook']")
+    docs = retrieve_docs("file system", doc_type=['notes', 'pyq', 'textbook'], k=3)
+    print(f"   Returned {len(docs)} chunks")
+    for doc in docs:
+        print(f"   - {doc.metadata.get('source_file')} | "
+              f"{doc.metadata.get('doc_type')} | "
               f"score: {doc.metadata.get('relevance_score')}")
 
 

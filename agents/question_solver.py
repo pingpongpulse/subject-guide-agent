@@ -3,13 +3,27 @@ from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def _get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return None
+
+    # Import inside function so the module can still be imported when the key is not set.
+    from groq import Groq
+
+    return Groq(api_key=api_key)
 
 
 def detect_question_type(question):
     """
     Detects whether question is theory, numerical or derivation.
     """
+    # If no Groq key is configured, fall back to a default type so the UI can still work.
+    groq_client = _get_groq_client()
+    if not groq_client:
+        return "theory"
+
     prompt = f"""
 You are a question type classifier for an academic assistant.
 
@@ -65,6 +79,11 @@ def get_difficulty_instruction(difficulty):
 
 
 def solve_theory(question, docs, difficulty="intermediate"):
+    # If no Groq key is configured, return a placeholder message.
+    groq_client = _get_groq_client()
+    if not groq_client:
+        return "Please set GROQ_API_KEY environment variable to enable AI responses."
+
     context = format_context_with_citations(docs)
     difficulty_instruction = get_difficulty_instruction(difficulty)
 
@@ -101,6 +120,11 @@ Question: {question}
 
 
 def solve_numerical(question, docs, difficulty="intermediate"):
+    # If no Groq key is configured, return a placeholder message.
+    groq_client = _get_groq_client()
+    if not groq_client:
+        return "Please set GROQ_API_KEY environment variable to enable AI responses."
+
     context = format_context_with_citations(docs)
     difficulty_instruction = get_difficulty_instruction(difficulty)
 
@@ -143,6 +167,11 @@ Question: {question}
 
 
 def solve_derivation(question, docs, difficulty="intermediate"):
+    # If no Groq key is configured, return a placeholder message.
+    groq_client = _get_groq_client()
+    if not groq_client:
+        return "Please set GROQ_API_KEY environment variable to enable AI responses."
+
     context = format_context_with_citations(docs)
     difficulty_instruction = get_difficulty_instruction(difficulty)
 

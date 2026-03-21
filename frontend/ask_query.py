@@ -11,15 +11,23 @@ def show_query_page():
 
     query = st.text_input("Your question")
 
+    # Subject filter
+    subject = st.selectbox(
+        "Filter by Subject (optional)",
+        ["All", "OS", "DBMS", "CN", "General"],
+        help="Filter documents by subject category. Select 'All' to search all subjects."
+    )
+    subject_filter = None if subject == "All" else subject.lower()
+
     if not query:
         st.info("Enter a question to get started.")
         return
 
     if st.button("Ask"):
         with st.spinner("Thinking..."):
-            result = route_query(query)
+            result = route_query(query, subject=subject_filter)
             answer = result.get("answer", "")
-            docs = retrieve_docs(query, k=4)
+            docs = retrieve_docs(query, k=4, subject=subject_filter)
 
         st.markdown("### Answer")
         st.write(answer)

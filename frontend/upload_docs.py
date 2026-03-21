@@ -25,6 +25,13 @@ def show_upload_page():
     st.header("Upload Documents")
     st.write("Upload PDF / DOCX / PPTX / PNG files to add them to the knowledge base.")
 
+    # Subject selection
+    subject = st.selectbox(
+        "Select Subject",
+        ["OS", "DBMS", "CN", "General"],
+        help="Choose the subject category for these documents."
+    )
+
     uploaded_files = st.file_uploader(
         "Select files",
         type=["pdf", "docx", "pptx", "png"],
@@ -40,7 +47,7 @@ def show_upload_page():
             total_chunks = 0
             for uploaded in uploaded_files:
                 file_path = save_uploaded_file(uploaded)
-                chunks = chunk_document(file_path, subject="general")
+                chunks = chunk_document(file_path, subject=subject.lower())
                 add_documents(chunks)
                 total_chunks += len(chunks)
 

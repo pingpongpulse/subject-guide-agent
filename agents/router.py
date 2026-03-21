@@ -19,7 +19,7 @@ def route_query(query, doc_type=None, subject=None, difficulty="intermediate"):
     print(f"Query classified as: {category}")
 
     # Step 2: Retrieve relevant docs
-    docs = retrieve_docs(query, k=4)
+    docs = retrieve_docs(query, k=4, doc_type=doc_type, subject=subject)
     print(f"Retriever returned {len(docs)} chunks")
 
     # Step 3: Route to correct agent
