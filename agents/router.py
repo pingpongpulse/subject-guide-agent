@@ -1,9 +1,12 @@
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 from agents.query_classifier import classify_query
 from agents.topic_explainer import explain_topic
 from agents.question_solver import solve_question
 from vectorstore.retriever import retrieve_docs
+
 
 load_dotenv()
 
