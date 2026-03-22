@@ -10,7 +10,7 @@ test_questions = [
         "difficulty": "intermediate"
     },
     {
-        "query": "A system has 3 processes and 4 resources. Find if the system is in safe state.",
+        "query": "A system has 3 processes P1 P2 P3 and 3 resources. Available resources are 3 3 2. Allocation matrix is P1: 0 1 0, P2: 2 0 0, P3: 3 0 2. Max matrix is P1: 7 5 3, P2: 3 2 2, P3: 9 0 2. Find if the system is in a safe state using Banker's algorithm and find the safe sequence.",
         "difficulty": "intermediate"
     },
     {
