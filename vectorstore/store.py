@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Path where ChromaDB saves data to disk
-CHROMA_PATH = "./chroma_db"
+CHROMA_PATH = "./vectorstore/chroma_db"
 
 def get_embedding_function():
     """

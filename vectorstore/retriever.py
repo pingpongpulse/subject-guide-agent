@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from vectorstore.store import get_vector_store
 from langchain_core.documents import Document
 from rank_bm25 import BM25Okapi
@@ -154,7 +157,7 @@ def merge_results(vector_results, bm25_results, top_k=4):
     # Return top k
     return merged[:top_k]
 
-def retrieve_docs(query, k=4, doc_type=None, subject=None, score_threshold=0.1):
+def retrieve_docs(query, k=4, doc_type=None, subject=None, score_threshold=-1):
     """The main entry point for Person 1's agents. Now uses both vector and BM25 search."""
     # Get vector results
     vector_results = retrieve_with_scores(query, top_k=k*2, doc_type=doc_type, subject=subject)
@@ -172,3 +175,15 @@ def retrieve_docs(query, k=4, doc_type=None, subject=None, score_threshold=0.1):
             doc.metadata["search_source"] = source
             filtered.append(doc)
     return filtered
+if __name__ == "__main__":
+    test_queries = [
+        "Explain Banker's algorithm",
+        "What is demand paging",
+    ]
+    for query in test_queries:
+        print(f"\nQuery: {query}")
+        docs = retrieve_docs(query, k=4)
+        print(f"Chunks returned: {len(docs)}")
+        for doc in docs:
+            print(f"  Source: {doc.metadata.get('source_file')} | Page: {doc.metadata.get('page_number')}")
+            print(f"  Preview: {doc.page_content[:100]}...")
