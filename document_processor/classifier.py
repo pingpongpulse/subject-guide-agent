@@ -4,7 +4,13 @@ from dotenv import load_dotenv
 
 # We keep the map at the top level as it is a constant
 KEYWORD_MAP = {
-    "pyq": ["question paper", "previous year", "exam paper", "2022", "2023", "2024", "q1", "q2", "q3", "marks", "answer all"],
+    "pyq": ["question paper", "previous year", "exam paper",
+    "2019", "2020", "2021", "2022", "2023", "2024", "2025",
+    "q1", "q2", "q3", "q4", "q5", "marks", "answer all",
+    "part a", "part b", "section a", "section b",
+    "maximum marks", "time allowed", "attempt any",
+    "all questions carry", "compulsory"
+],
     "syllabus": ["syllabus", "curriculum", "course outline", "unit 1", "module 1", "credit hours", "course objectives"],
     "lab_manual": ["lab manual", "experiment", "aim", "apparatus", "procedure", "observation", "result", "viva"],
     "textbook": ["chapter", "definition", "theorem", "introduction", "bibliography", "index", "references"],

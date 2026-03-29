@@ -1,47 +1,94 @@
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 import pdfplumber
 import os
 
-# Set tesseract path — update this if yours is different
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-def load_image(filepath):
-    image = Image.open(filepath)
-    text = pytesseract.image_to_string(image)
+def preprocess_image(image):
+    """
+    Preprocesses image for better OCR accuracy.
+    Converts to grayscale, increases contrast, removes noise.
+    """
+    image = image.convert("L")  # grayscale
+    image = ImageEnhance.Contrast(image).enhance(2.0)  # increase contrast
+    image = image.filter(ImageFilter.SHARPEN)  # sharpen
+    return image
 
-    return [{
-        "text": text.strip(),
-        "page_number": 1,
-        "source_file": os.path.basename(filepath),
-        "total_pages": 1
-    }]
+
+def load_image(filepath):
+    """
+    Extracts text from image files using OCR.
+    Supports PNG, JPG, JPEG, BMP, TIFF.
+    """
+    try:
+        image = Image.open(filepath)
+        image = preprocess_image(image)
+        custom_config = r"--oem 3 --psm 6"
+        text = pytesseract.image_to_string(image, config=custom_config)
+
+        return [{
+            "text": text.strip(),
+            "page_number": 1,
+            "source_file": os.path.basename(filepath),
+            "total_pages": 1,
+            "extraction_method": "ocr_image"
+        }]
+    except Exception as e:
+        print(f"  OCR image failed: {e}")
+        return []
 
 
 def load_scanned_pdf(filepath):
+    """
+    Handles scanned PDFs, image-based PDFs and mixed PDFs.
+    For each page tries text extraction first.
+    If text is too short falls back to OCR on that page.
+    """
     pages = []
 
-    with pdfplumber.open(filepath) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            text = page.extract_text()
+    try:
+        with pdfplumber.open(filepath) as pdf:
+            total_pages = len(pdf.pages)
 
-            if not text or len(text.strip()) < 20:
-                # fallback to OCR if text extraction fails
-                image = page.to_image(resolution=300).original
-                text = pytesseract.image_to_string(image)
+            for page_num, page in enumerate(pdf.pages):
+                text = page.extract_text() or ""
 
-            if text and text.strip():
-                pages.append({
-                    "text": text.strip(),
-                    "page_number": page_num + 1,
-                    "source_file": os.path.basename(filepath),
-                    "total_pages": len(pdf.pages)
-                })
+                if len(text.strip()) < 50:
+                    # Text extraction failed — use OCR on this page
+                    try:
+                        image = page.to_image(resolution=300).original
+                        image = preprocess_image(image)
+                        custom_config = r"--oem 3 --psm 6"
+                        text = pytesseract.image_to_string(
+                            image, config=custom_config
+                        )
+                        method = "ocr"
+                    except Exception as e:
+                        print(f"  OCR failed on page {page_num+1}: {e}")
+                        text = ""
+                        method = "failed"
+                else:
+                    method = "pdfplumber"
+
+                if text.strip():
+                    pages.append({
+                        "text": text.strip(),
+                        "page_number": page_num + 1,
+                        "source_file": os.path.basename(filepath),
+                        "total_pages": total_pages,
+                        "extraction_method": method
+                    })
+
+    except Exception as e:
+        print(f"  Scanned PDF loading failed: {e}")
 
     return pages
 
 
 if __name__ == "__main__":
-    # Test with any image file you have
-    result = load_image("data/sample_docs/test.png")
-    print(result[0]['text'][:500])# displays 500 character from beginning remove limit for complete text displaying
+    result = load_scanned_pdf("data/sample_docs/test.pdf")
+    for page in result:
+        print(f"--- Page {page['page_number']} ({page['extraction_method']}) ---")
+        print(page['text'][:300])
+        print()

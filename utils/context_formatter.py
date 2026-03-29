@@ -1,58 +1,96 @@
-from langchain_core.documents import Document
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def format_context(docs: list[Document]) -> str:
+
+def format_context(docs):
     """
-    Converts retrieved documents into a clean string
-    that gets pasted directly into the LLM prompt.
-    
-    Every agent calls this — do not change the output format
-    without telling Person 1.
-    
-    Output looks like:
-    [Source 1: Operating_Systems.pdf | Page 12 | Type: notes | Score: 0.748]
-    Introduction to Virtual File System (VFS)...
-    
-    ---
-    
-    [Source 2: test.png | Page 1 | Type: notes | Score: 0.496]
-    Demand paging content...
+    Formats retrieved docs into a clean context string for LLM prompts.
+    Handles both Document objects and plain dicts.
     """
-    if not docs:
-        return "No relevant content found in uploaded documents."
-
-    formatted_parts = []
-
+    context = ""
     for i, doc in enumerate(docs):
-        source = doc.metadata.get("source_file", "unknown")
-        page = doc.metadata.get("page_number", "?")
-        doc_type = doc.metadata.get("doc_type", "unknown")
-        score = doc.metadata.get("relevance_score", "?")
+        if hasattr(doc, 'metadata'):
+            source = doc.metadata.get("source_file", "unknown")
+            page = doc.metadata.get("page_number", "?")
+            doc_type = doc.metadata.get("doc_type", "notes")
+            subject = doc.metadata.get("subject", "general")
+            text = doc.page_content[:500]
+        else:
+            source = doc.get("source_file", "unknown")
+            page = doc.get("page_number", "?")
+            doc_type = doc.get("doc_type", "notes")
+            subject = doc.get("subject", "general")
+            text = doc.get("text", "")[:500]
 
-        header = f"[Source {i+1}: {source} | Page {page} | Type: {doc_type} | Score: {score}]"
-        content = doc.page_content.strip()
+        context += (
+            f"\n[Source {i+1}: {source} | "
+            f"Page {page} | "
+            f"Type: {doc_type} | "
+            f"Subject: {subject}]\n{text}\n"
+        )
+    return context
 
-        formatted_parts.append(f"{header}\n{content}")
 
-    return "\n\n---\n\n".join(formatted_parts)
-
-
-def format_sources_list(docs: list[Document]) -> list[str]:
+def format_sources_list(docs):
     """
-    Returns a clean list of source strings for display in UI.
-    
-    Output:
-    ["Operating_Systems.pdf — Page 12", "test.png — Page 1"]
+    Returns a clean list of sources for display.
     """
     sources = []
     seen = set()
 
     for doc in docs:
-        source = doc.metadata.get("source_file", "unknown")
-        page = doc.metadata.get("page_number", "?")
-        label = f"{source} — Page {page}"
+        if hasattr(doc, 'metadata'):
+            source = doc.metadata.get("source_file", "unknown")
+            page = doc.metadata.get("page_number", "?")
+        else:
+            source = doc.get("source_file", "unknown")
+            page = doc.get("page_number", "?")
 
-        if label not in seen:
-            sources.append(label)
-            seen.add(label)
+        key = f"{source}_page_{page}"
+        if key not in seen:
+            seen.add(key)
+            sources.append({
+                "file": source,
+                "page": page
+            })
 
     return sources
+
+
+def format_answer_with_sources(answer, docs):
+    """
+    Appends a formatted sources section to any answer.
+    """
+    sources = format_sources_list(docs)
+
+    if not sources:
+        return answer
+
+    sources_text = "\n\n**Sources Used:**\n"
+    for s in sources:
+        sources_text += f"- {s['file']} | Page {s['page']}\n"
+
+    return answer + sources_text
+
+
+if __name__ == "__main__":
+    dummy_docs = [
+        {
+            "text": "Demand paging loads pages only when needed.",
+            "source_file": "os_notes.pdf",
+            "page_number": 10,
+            "doc_type": "notes",
+            "subject": "os"
+        },
+        {
+            "text": "Page fault occurs when page is not in memory.",
+            "source_file": "os_textbook.pdf",
+            "page_number": 45,
+            "doc_type": "textbook",
+            "subject": "os"
+        }
+    ]
+
+    print(format_context(dummy_docs))
+    print(format_sources_list(dummy_docs))

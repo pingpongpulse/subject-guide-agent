@@ -1,28 +1,15 @@
 import os
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
-
-
-def _get_groq_client():
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        return None
-
-    # Import inside function so the module can still be imported when the key is not set.
-    from groq import Groq
-
-    return Groq(api_key=api_key)
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def classify_query(query):
-    """Classifies user query into one of 4 categories."""
-
-    # If no Groq key is configured, fall back to a default category so the UI can still work.
-    groq_client = _get_groq_client()
-    if not groq_client:
-        return "topic_explanation"
-
+    """
+    Classifies user query into one of 5 categories.
+    """
     prompt = f"""
 You are a query classifier for a student study assistant.
 
@@ -31,6 +18,7 @@ Classify this query into exactly ONE of these categories:
 - question_solving (user wants to solve a problem or PYQ)
 - revision (user wants quick revision or summary)
 - study_plan (user wants a study plan or schedule)
+- pyq_analysis (user wants to know most repeated topics, topic frequency, or what to focus on for exams)
 
 Query: "{query}"
 
@@ -41,9 +29,15 @@ Reply with ONLY the category label, nothing else.
         messages=[{"role": "user", "content": prompt}]
     )
     label = response.choices[0].message.content.strip().lower()
-    valid_labels = ["topic_explanation", "question_solving", "revision", "study_plan"]
+    valid_labels = [
+        "topic_explanation",
+        "question_solving",
+        "revision",
+        "study_plan",
+        "pyq_analysis"
+    ]
     if label not in valid_labels:
-        return "topic_explanation"  # default fallback
+        return "topic_explanation"
     return label
 
 
@@ -53,7 +47,14 @@ if __name__ == "__main__":
         "Explain virtual memory",
         "Give quick revision of page replacement",
         "Solve this paging problem",
-        "Create a 7 day study plan for OS exam"
+        "What are the most repeated topics in past papers?",
+        "What should I focus on for the exam?"
+          "what topics come most in exams",
+        "which chapters are important for my test",
+        "tell me high weightage topics",
+        "which questions repeat every year",
+        "what should I revise tonight",
+        "what are the most repeated topics in past papers"
     ]
     for q in test_queries:
         label = classify_query(q)
