@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Path where ChromaDB saves data to disk
-CHROMA_PATH = "./vectorstore/chroma_db"
+# Path where ChromaDB saves data to disk - use absolute path based on script location
+_script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHROMA_PATH = os.path.join(_script_dir, "vectorstore", "chroma_db")
 
 def get_embedding_function():
     """

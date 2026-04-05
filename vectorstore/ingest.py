@@ -178,7 +178,9 @@ def ingest_file(filepath):
 
 
 if __name__ == "__main__":
-    docs_folder = "sample_docs"
+    # Use absolute path based on script location
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    docs_folder = os.path.join(script_dir, "sample_docs")
 
     all_files = [
         f for f in os.listdir(docs_folder)
